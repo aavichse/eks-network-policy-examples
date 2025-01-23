@@ -27,7 +27,7 @@ pod/client-two                        1/1     Running   0                21m
 pod/demo-app-c5cf4d4b8-ksvsh          1/1     Running   0                21m
 
 NAME                             TYPE           CLUSTER-IP   EXTERNAL-IP                                                                    PORT(S)                     AGE
-service/demo-app                 ClusterIP      172.20.199.25    <none>                                                                         80/TCP                      3d12h
+service/demo-app                 ClusterIP      172.20.199.25    <none>                                                                         8080->31003/TCP             3d12h
 service/kubernetes               ClusterIP      172.20.0.1       <none>                                                                         443/TCP                     232d
 
 NAME                                     READY   UP-TO-DATE   AVAILABLE   AGE
@@ -108,10 +108,10 @@ command terminated with exit code 28
 kubectl apply -f policies/02-allow-ingress-from-samens.yaml
 ```
 ```shell
-kubectl exec -it client-one -- curl --max-time 3 demo-app
-kubectl exec -it client-two -- curl --max-time 3 demo-app
-kubectl exec -it another-client-one -n another-ns -- curl --max-time 3 demo-app.default
-kubectl exec -it another-client-two -n another-ns -- curl --max-time 3 demo-app.default
+kubectl exec -it client-one -- curl --max-time 3 demo-app:8080
+kubectl exec -it client-two -- curl --max-time 3 demo-app:8080
+kubectl exec -it another-client-one -n another-ns -- curl --max-time 3 demo-app.default:8080
+kubectl exec -it another-client-two -n another-ns -- curl --max-time 3 demo-app.default:8080
 ```
 First two commands will succeed, as the network policy is allowing the ingress traffic only with in the `default` namespace.
 
@@ -125,10 +125,10 @@ kubectl delete -f policies/02-allow-ingress-from-samens.yaml
 kubectl apply -f policies/03-allow-ingress-from-samens-client-one.yaml
 ```
 ```shell
-kubectl exec -it client-one -- curl --max-time 3 demo-app
-kubectl exec -it client-two -- curl --max-time 3 demo-app
-kubectl exec -it another-client-one -n another-ns -- curl --max-time 3 demo-app.default
-kubectl exec -it another-client-two -n another-ns -- curl --max-time 3 demo-app.default
+kubectl exec -it client-one -- curl --max-time 3 demo-app:8080
+kubectl exec -it client-two -- curl --max-time 3 demo-app:8080
+kubectl exec -it another-client-one -n another-ns -- curl --max-time 3 demo-app.default:8080
+kubectl exec -it another-client-two -n another-ns -- curl --max-time 3 demo-app.default:8080
 ```
 Only the first command works, and the other three timeout given the network policy allow access only from `client-one` pod in `default` namespace.
 
@@ -137,8 +137,8 @@ Only the first command works, and the other three timeout given the network poli
 kubectl apply -f policies/04-allow-ingress-from-xns.yaml
 ```
 ```shell
-kubectl exec -it another-client-one -n another-ns -- curl --max-time 3 demo-app.default
-kubectl exec -it another-client-two -n another-ns -- curl --max-time 3 demo-app.default
+kubectl exec -it another-client-one -n another-ns -- curl --max-time 3 demo-app.default:8080
+kubectl exec -it another-client-two -n another-ns -- curl --max-time 3 demo-app.default:8080
 ```
 Now, traffic is allowed from all pods in the `another-ns` namespace.
 
@@ -152,8 +152,8 @@ kubectl delete -f policies/04-allow-ingress-from-xns.yaml
 kubectl apply -f policies/05-allow-ingress-from-xns-client-one.yaml
 ```
 ```shell
-kubectl exec -it another-client-one -n another-ns -- curl --max-time 3 demo-app.default
-kubectl exec -it another-client-two -n another-ns -- curl --max-time 3 demo-app.default
+kubectl exec -it another-client-one -n another-ns -- curl --max-time 3 demo-app.default:8080
+kubectl exec -it another-client-two -n another-ns -- curl --max-time 3 demo-app.default:8080
 ```
 Now, traffic is allowed from only `another-client-one` pod in the `another-ns` namespace, and not from `another-client-two` pod.
 
@@ -174,7 +174,7 @@ kubectl delete -f policies/05-allow-ingress-from-xns-client-one.yaml
 kubectl apply -f policies/06-deny-egress-from-client-one.yaml
 ```
 ```shell
-kubectl exec -it client-one -- curl --max-time 3 demo-app
+kubectl exec -it client-one -- curl --max-time 3 demo-app:8080
 ```
 ```
 curl: (28) Resolving timed out after 3000 milliseconds
@@ -187,7 +187,7 @@ It fails with timeout error, as `client-one` pod is not able to lookup/resolve t
 kubectl apply -f policies/07-allow-egress-to-coredns.yaml
 ```
 ```shell
-kubectl exec -it client-one -- curl --max-time 3 -v demo-app
+kubectl exec -it client-one -- curl --max-time 3 -v demo-app:8080
 ```
 ```
 *   Trying 172.20.20.101:80...
@@ -203,7 +203,7 @@ Now, `client-one` is able to communicate with `coredns` to resolve the service i
 kubectl apply -f policies/08-allow-egress-to-demo-app.yaml
 ```
 ```shell
-kubectl exec -it client-one -- curl --max-time 3 demo-app
+kubectl exec -it client-one -- curl --max-time 3 demo-app:8080
 ```
 This time, `client-one` is able to resolve the ip address and connect to the `demo-app` on port `80` successfully.
 
